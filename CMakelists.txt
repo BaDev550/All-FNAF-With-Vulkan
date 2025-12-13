@@ -1,0 +1,69 @@
+cmake_minimum_required(VERSION 3.23)
+project(FNAF)
+
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
+
+if(NOT DEFINED ENV{VULKAN_SDK})
+    message(FATAL_ERROR "VULKAN_SDK environment variable not set!")
+endif()
+set(VULKAN_SDK $ENV{VULKAN_SDK})
+set(VULKAN_LIB_DIR "${VULKAN_SDK}/Lib")
+set(VULKAN_INCLUDE_DIR "${VULKAN_SDK}/Include")
+
+set(SHADERC_LIB "${VULKAN_LIB_DIR}/shaderc_shared.lib")
+set(SPIRV_CROSS_CORE_LIB "${VULKAN_LIB_DIR}/spirv-cross-core.lib")
+set(SPIRV_CROSS_GLSL_LIB "${VULKAN_LIB_DIR}/spirv-cross-glsl.lib")
+set(SPIRV_TOOLS_LIB "${VULKAN_LIB_DIR}/SPIRV-Tools.lib")
+set(VULKAN_LIB "${VULKAN_LIB_DIR}/vulkan-1.lib")
+
+add_subdirectory(vendor)
+add_executable(Game)
+file(GLOB_RECURSE GAME_SOURCES CONFIGURE_DEPENDS
+    Source/*.cpp
+    Source/*.h
+)
+source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}/Source" FILES ${GAME_SOURCES})
+target_sources(Game
+    PRIVATE
+        ${GAME_SOURCES}
+        vendor/stb/stb_image.cpp
+    PUBLIC
+        FILE_SET HEADERS
+        TYPE HEADERS
+        BASE_DIRS 
+            Source
+        FILES
+            Source/gpch.h
+)
+
+target_include_directories(Game
+    PUBLIC
+        Source
+        vendor/GLFW/include
+        vendor/imgui
+        vendor/glm
+        vendor/assimp/include
+        vendor/stb/
+        ${VULKAN_INCLUDE_DIR}
+)
+
+target_link_libraries(Game 
+    PRIVATE
+        glfw
+        ImGui
+        assimp
+
+        ${VULKAN_LIB}
+        ${SHADERC_LIB}
+        ${SPIRV_CROSS_CORE_LIB}
+        ${SPIRV_CROSS_GLSL_LIB}
+        ${SPIRV_TOOLS_LIB}
+)
+
+target_precompile_headers(Game
+    PRIVATE
+        Source/gpch.h
+)
