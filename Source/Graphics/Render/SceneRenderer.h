@@ -32,16 +32,16 @@ struct SceneInfo {
 	UniformBufferDirectionalLight uboDirectionalLight;
 	UniformBufferPointLights uboPointLights;
 
-	MEM::Scope<DescriptorPool> scenePool = nullptr;
 	MEM::Ref<Texture> fallbackTexture = nullptr;
+	MEM::Scope<DescriptorPool> scenePool = nullptr;
+	std::vector<VkDescriptorSet> generalInfoSets;
 	VkDescriptorSet fallbackTextureSet = VK_NULL_HANDLE;
-	VkDescriptorSet generalInfoSet = VK_NULL_HANDLE;
 
 	MEM::Scope<DescriptorSetLayout> generalSetLayout = nullptr;
 	MEM::Scope<DescriptorSetLayout> textureSetLayout = nullptr;
 
 	CameraInfo cameraInfo{};
-	MEM::Scope<Buffer> cameraUniformBuffer = nullptr;
+	std::vector<MEM::Scope<Buffer>> cameraBuffers;
 	MEM::Scope<Buffer> directionalLightBuffer = nullptr;
 	MEM::Scope<Buffer> pointLightBuffer = nullptr;
 
@@ -59,10 +59,10 @@ public:
 	SceneRenderer(Renderer& renderer);
 	~SceneRenderer();
 	SceneInfo& GetSceneInfo() { return _SceneInfo; }
-	void CreateDrawnable(GameObject& object, const std::string& path);
+	Drawnable& CreateDrawnable(GameObject& object, const std::string& path);
 	Drawnable& GetDrawnable(gameobjectid_t id);
 
-	void Draw(Pipeline& pipeline, std::vector<GameObject>& objects, Camera& camera, std::function<void(VkCommandBuffer)> overlayCallback = nullptr);
+	void Draw(VkCommandBuffer cmd, Pipeline& pipeline, std::vector<GameObject>& objects, Camera& camera, uint32_t viewIndex = 0);
 private:
 	Renderer& _Renderer;
 	SceneInfo _SceneInfo;

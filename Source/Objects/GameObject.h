@@ -34,7 +34,7 @@ public:
 	const std::string& GetName() const { return _Name; }
 
 	gameobjectid_t GetID() const { return _Id; }
-private:
+protected:
 	std::string _Name;
 	gameobjectid_t _Id;
 	renderid_t _RenderId = UINT32_MAX;

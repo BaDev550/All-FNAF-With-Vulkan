@@ -18,6 +18,7 @@ Application::Application(const ApplicationSpecifications specs)
 	_Window = MEM::CreateScope<Window>(windowSpecs);
 	_Device = MEM::CreateScope<Device>(*_Window, _Specs);
 	_Renderer = MEM::CreateScope<Renderer>();
+	_SoundDevice = MEM::CreateScope<SoundDevice>();
 }
 
 Application::~Application()

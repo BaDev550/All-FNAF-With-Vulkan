@@ -27,12 +27,8 @@ int Renderer::GetFrameIndex() const {
 
 void Renderer::Submit(const std::function<void(VkCommandBuffer&)>& fn)
 {
-	auto swapchainExtent = _SwapChain->GetSwapChainExtent();
 	auto cmd = BeginFrame();
-	Commands::BeginRenderPass(cmd);
-	Commands::SetViewport(cmd, (float)swapchainExtent.width, (float)swapchainExtent.height);
 	fn(cmd);
-	Commands::EndRenderPass(cmd);
 	EndFrame();
 }
 

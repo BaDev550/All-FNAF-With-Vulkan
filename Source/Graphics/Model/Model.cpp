@@ -6,6 +6,7 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/hash.hpp>
 #include <unordered_map>
+#include <stb_image.h>
 #include <map>
 #include <filesystem>
 #include "Engine/Application.h"
@@ -22,10 +23,18 @@ namespace std {
 }
 
 static const uint32_t S_ASSIMPIMPORTERFLAGS =
+	aiProcess_JoinIdenticalVertices |
 	aiProcess_Triangulate |
-	aiProcess_GenNormals |
+	aiProcess_GenSmoothNormals |
+	aiProcess_SplitLargeMeshes |
+	aiProcess_ImproveCacheLocality |
+	aiProcess_RemoveRedundantMaterials |
+	aiProcess_FindDegenerates |
+	aiProcess_FindInvalidData |
+	aiProcess_GenUVCoords |
 	aiProcess_FlipUVs |
-	aiProcess_JoinIdenticalVertices;
+	aiProcess_CalcTangentSpace |
+	aiProcess_EmbedTextures;
 
 MEM::Ref<Model> Model::CreateModelFromFile(const std::string& path, VkDescriptorImageInfo fallbackTextureInfo, DescriptorPool& pool, DescriptorSetLayout& layout)
 {
@@ -57,7 +66,7 @@ void Model::CreateVertexBuffer(const std::vector<Vertex>& vertices) {
 		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 	};
 	stagingBuffer.Map();
-	stagingBuffer.WriteToBuffer((void*)vertices.data());
+	stagingBuffer.WriteToBuffer((void*)vertices.data(), sizeof(Vertex) * vertices.size(), 0);
 
 	_VertexBuffer = MEM::CreateScope<Buffer>(
 		vertexSize,
@@ -85,7 +94,7 @@ void Model::CreateIndexBuffer(const std::vector<uint32_t>& indices)
 		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 	};
 	stagingBuffer.Map();
-	stagingBuffer.WriteToBuffer((void*)indices.data());
+	stagingBuffer.WriteToBuffer((void*)indices.data(), sizeof(uint32_t) * indices.size(), 0);
 
 	_IndexBuffer = MEM::CreateScope<Buffer>(
 		indexSize,
@@ -114,13 +123,42 @@ std::vector<VkVertexInputAttributeDescription> Vertex::GetAttributeDescriptions(
 	return attributeDescriptions;
 }
 
-MEM::Ref<Texture> Model::LoadMaterialTexture(const std::string& path, std::unordered_map<std::string, MEM::Ref<Texture>>& cache) {
+MEM::Ref<Texture> Model::LoadMaterialTexture(const aiScene* scene, const std::string& path, std::unordered_map<std::string, MEM::Ref<Texture>>& cache) {
 	if (cache.find(path) != cache.end()) {
 		return cache[path];
 	}
 
 	try {
-		MEM::Ref<Texture> newTex = MEM::CreateRef<Texture>(path);
+		MEM::Ref<Texture> newTex = nullptr;
+		if (path.length() > 1 && path[0] == '*') {
+			int textureIndex = std::stoi(path.substr(1));
+			if (textureIndex >= 0 && textureIndex < (int)scene->mNumTextures) {
+				const aiTexture* embeddedTex = scene->mTextures[textureIndex];
+				if (embeddedTex->mHeight == 0) {
+					int texWidth, texHeight, texChannels;
+					stbi_uc* pixels = stbi_load_from_memory(
+						reinterpret_cast<const stbi_uc*>(embeddedTex->pcData),
+						embeddedTex->mWidth,
+						&texWidth, &texHeight, &texChannels, STBI_rgb_alpha
+					);
+
+					if (!pixels) {
+						throw std::runtime_error("Failed to decode embedded compressed texture.");
+					}
+
+					newTex = MEM::CreateRef<Texture>(pixels, (uint32_t)texWidth, (uint32_t)texHeight);
+					stbi_image_free(pixels);
+				}
+			}
+			else {
+				LOG_WARN("Embedded texture index {} out of range.", textureIndex);
+			}
+		}
+
+		if (newTex == nullptr) {
+			newTex = MEM::CreateRef<Texture>(path);
+		}
+
 		cache[path] = newTex;
 		return newTex;
 	}
@@ -143,8 +181,12 @@ void Model::ProcessMaterials(const aiScene* scene, const std::string& modelPath,
 			if (aiMat->GetTextureCount(type) > 0) {
 				aiString str;
 				aiMat->GetTexture(type, 0, &str);
-				std::string fullPath = (rootPath / str.C_Str()).string();
-				return LoadMaterialTexture(fullPath, textureCache);
+				std::string texturePath = str.C_Str();
+
+				if (texturePath.length() > 0 && texturePath[0] != '*') {
+					texturePath = (rootPath / texturePath).string();
+				}
+				return LoadMaterialTexture(scene, texturePath, textureCache);
 			}
 			return nullptr;
 			};

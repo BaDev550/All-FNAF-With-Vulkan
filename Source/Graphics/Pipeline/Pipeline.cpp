@@ -4,16 +4,22 @@
 #include "Engine/Application.h"
 #include "ShaderCompiler.h"
 
-Pipeline::Pipeline(const PipelineConfigInfo& config, const std::string& vertexShaderPath, const std::string& fragmentShaderPath) {
-	CreateGraphicsPipline(config, vertexShaderPath, fragmentShaderPath);
-}
-
-Pipeline::Pipeline(const std::string& vertexShaderPath, const std::string& fragmentShaderPath, const std::vector<VkDescriptorSetLayout>& descriptorSetLayouts)
-{
+Pipeline::Pipeline(
+	const std::string& vertexShaderPath, 
+	const std::string& fragmentShaderPath,
+	const std::vector<VkDescriptorSetLayout>& descriptorSetLayouts,
+	VkRenderPass renderPass
+) {
 	PipelineConfigInfo config{};
 	Device::DefaultPipelineConfigInfo(config);
-	CreateLayout(descriptorSetLayouts);
-	CreateGraphicsPipline(config, vertexShaderPath, fragmentShaderPath);
+
+	if (!descriptorSetLayouts.empty()) {
+		CreateLayout(descriptorSetLayouts);
+	}
+	else {
+		_PipelineLayout = config.PipelineLayout;
+	}
+	CreateGraphicsPipline(config, renderPass, vertexShaderPath, fragmentShaderPath);
 }
 
 Pipeline::~Pipeline()
@@ -61,9 +67,9 @@ std::vector<char> Pipeline::ReadFile(const std::string& path) {
 	return buffer;
 }
 
-void Pipeline::CreateGraphicsPipline(const PipelineConfigInfo& config, const std::string& vertexShaderPath, const std::string& fragmentShaderPath) {
+void Pipeline::CreateGraphicsPipline(const PipelineConfigInfo& config, VkRenderPass renderPass, const std::string& vertexShaderPath, const std::string& fragmentShaderPath) {
 	ASSERT(_PipelineLayout != VK_NULL_HANDLE && "Cannot create grapichs pipeline:: pipelinelayout is not valid");
-	ASSERT(Application::Get()->GetRenderer().GetSwapChainRenderPass() != VK_NULL_HANDLE && "Cannot create grapichs pipeline:: renderPass is not valid");
+	ASSERT(renderPass && "Cannot create grapichs pipeline:: renderPass is not valid");
 	try {
 		auto vertexShaderCode = pipeline::utils::CompileShaderFileToSpirv(vertexShaderPath);
 		auto fragmentShaderCode = pipeline::utils::CompileShaderFileToSpirv(fragmentShaderPath);
@@ -115,7 +121,7 @@ void Pipeline::CreateGraphicsPipline(const PipelineConfigInfo& config, const std
 	pipelineInfo.pDynamicState =        &config.DynamicStateInfo;
 
 	pipelineInfo.layout =	  _PipelineLayout;
-	pipelineInfo.renderPass = Application::Get()->GetRenderer().GetSwapChainRenderPass();
+	pipelineInfo.renderPass = renderPass;
 	pipelineInfo.subpass =	  config.subpass;
 
 	pipelineInfo.basePipelineIndex = -1;

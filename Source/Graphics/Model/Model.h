@@ -100,7 +100,7 @@ private:
 	void CreateVertexBuffer(const std::vector<Vertex>& vertices);
 	void CreateIndexBuffer(const std::vector<uint32_t>& indices);
 	void ProcessMaterials(const aiScene* scene, const std::string& modelPath, VkDescriptorImageInfo fallbackTextureInfo, DescriptorPool& pool, DescriptorSetLayout& layout);
-	MEM::Ref<Texture> LoadMaterialTexture(const std::string& path, std::unordered_map<std::string, MEM::Ref<Texture>>& cache);
+	MEM::Ref<Texture> LoadMaterialTexture(const aiScene* scene, const std::string& path, std::unordered_map<std::string, MEM::Ref<Texture>>& cache);
 
 	MEM::Scope<Buffer> _VertexBuffer;
 	uint32_t _VertexCount;

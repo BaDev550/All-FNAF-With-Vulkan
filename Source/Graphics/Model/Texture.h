@@ -1,13 +1,10 @@
 #pragma once
 #include "Graphics/Buffers/Buffer.h"
 
-namespace texture::utils {
-	bool load_texture_from_file(const char* filePath, VkImage& outImage, VkDeviceMemory& outImageMemory);
-}
-
 class Texture {
 public:
 	Texture(const std::string& path);
+	Texture(const uint8_t* data, uint32_t width, uint32_t height);
 	Texture(const Texture&) = delete;
 	Texture& operator=(const Texture&) = delete;
 	~Texture();

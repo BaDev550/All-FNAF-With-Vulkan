@@ -11,13 +11,17 @@
 
 struct ApplicationSpecifications;
 struct PipelineConfigInfo {
-	VkPipelineViewportStateCreateInfo ViewportInfo;
-	VkPipelineRasterizationStateCreateInfo RasterizationInfo;
-	VkPipelineInputAssemblyStateCreateInfo InputAssemblyInfo;
-	VkPipelineMultisampleStateCreateInfo MultisampleInfo;
-	VkPipelineColorBlendAttachmentState ColorBlendAttachment;
-	VkPipelineColorBlendStateCreateInfo ColorBlendInfo;
-	VkPipelineDepthStencilStateCreateInfo DepthStencilInfo;
+	PipelineConfigInfo() = default;
+	PipelineConfigInfo(const PipelineConfigInfo&) = delete;
+	PipelineConfigInfo& operator=(const PipelineConfigInfo&) = delete;
+
+	VkPipelineViewportStateCreateInfo ViewportInfo{};
+	VkPipelineRasterizationStateCreateInfo RasterizationInfo{};
+	VkPipelineInputAssemblyStateCreateInfo InputAssemblyInfo{};
+	VkPipelineMultisampleStateCreateInfo MultisampleInfo{};
+	VkPipelineColorBlendAttachmentState ColorBlendAttachment{};
+	VkPipelineColorBlendStateCreateInfo ColorBlendInfo{};
+	VkPipelineDepthStencilStateCreateInfo DepthStencilInfo{};
 
 	std::vector<VkDynamicState> DynamicStateEnables;
 	VkPipelineDynamicStateCreateInfo DynamicStateInfo;

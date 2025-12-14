@@ -9,7 +9,7 @@ SceneRenderer::SceneRenderer(Renderer& renderer)
 		.SetMaxSets(1000)
 		.AddPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000)
 		.AddPoolSize(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000)
-		.AddPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1024)
+		.AddPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2048)
 		.Build();
 
 	_SceneInfo.generalSetLayout = DescriptorSetLayout::Builder()
@@ -30,15 +30,6 @@ SceneRenderer::SceneRenderer(Renderer& renderer)
 		.WriteImage(DIFFUSE_TEXTURE_BINDING, &fallbackImageInfo)
 		.Build(_SceneInfo.fallbackTextureSet);
 
-	_SceneInfo.cameraUniformBuffer = MEM::CreateScope<Buffer>(
-		sizeof(CameraInfo),
-		1,
-		VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
-		Application::Get()->GetDevice().GetDeviceProperties().limits.minUniformBufferOffsetAlignment
-	);
-	_SceneInfo.cameraUniformBuffer->Map();
-
 	_SceneInfo.pointLightBuffer = MEM::CreateScope<Buffer>(
 		sizeof(UniformBufferPointLights),
 		1,
@@ -56,29 +47,42 @@ SceneRenderer::SceneRenderer(Renderer& renderer)
 		Application::Get()->GetDevice().GetDeviceProperties().limits.minUniformBufferOffsetAlignment
 	);
 	_SceneInfo.directionalLightBuffer->Map();
-
-	VkDescriptorBufferInfo cameraInfo = _SceneInfo.cameraUniformBuffer->DescriptorInfo();
 	VkDescriptorBufferInfo pointLightInfo = _SceneInfo.pointLightBuffer->DescriptorInfo();
 	VkDescriptorBufferInfo dirLightInfo = _SceneInfo.directionalLightBuffer->DescriptorInfo();
 
-	DescriptorWriter(*_SceneInfo.generalSetLayout, *_SceneInfo.scenePool)
-		.WriteBuffer(0, &cameraInfo)
-		.WriteBuffer(1, &pointLightInfo)
-		.WriteBuffer(2, &dirLightInfo)
-		.Build(_SceneInfo.generalInfoSet);
+	_SceneInfo.cameraBuffers.resize(2);
+	_SceneInfo.generalInfoSets.resize(2);
+	for (int i = 0; i < 2; i++) {
+		_SceneInfo.cameraBuffers[i] = MEM::CreateScope<Buffer>(
+			sizeof(CameraInfo),
+			1,
+			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+			Application::Get()->GetDevice().GetDeviceProperties().limits.minUniformBufferOffsetAlignment
+		);
+		_SceneInfo.cameraBuffers[i]->Map();
+
+		VkDescriptorBufferInfo camInfo = _SceneInfo.cameraBuffers[i]->DescriptorInfo();
+		DescriptorWriter(*_SceneInfo.generalSetLayout, *_SceneInfo.scenePool)
+			.WriteBuffer(0, &camInfo)
+			.WriteBuffer(1, &pointLightInfo)
+			.WriteBuffer(2, &dirLightInfo)
+			.Build(_SceneInfo.generalInfoSets[i]);
+	}
 }
 
 SceneRenderer::~SceneRenderer()
 {
 }
 
-void SceneRenderer::CreateDrawnable(GameObject& object, const std::string& path)
+Drawnable& SceneRenderer::CreateDrawnable(GameObject& object, const std::string& path)
 {
 	Drawnable d{};
 	d.ownerId = object.GetID();
 	d.model = Model::CreateModelFromFile(path, _SceneInfo.fallbackTexture->DescriptorInfo(), *_SceneInfo.scenePool, *_SceneInfo.textureSetLayout);
 	d.IsVisible = true;
 	_Drawnables.push_back(d);
+	return _Drawnables.back();
 }
 
 Drawnable& SceneRenderer::GetDrawnable(gameobjectid_t id)
@@ -89,11 +93,13 @@ Drawnable& SceneRenderer::GetDrawnable(gameobjectid_t id)
 	}
 }
 
-void SceneRenderer::Draw(Pipeline& pipeline, std::vector<GameObject>& objects, Camera& camera, std::function<void(VkCommandBuffer)> overlayCallback)
+void SceneRenderer::Draw(VkCommandBuffer cmd, Pipeline& pipeline, std::vector<GameObject>& objects, Camera& camera, uint32_t viewIndex)
 {
+	if (viewIndex >= _SceneInfo.cameraBuffers.size()) return;
+
 	_SceneInfo.cameraInfo.view = camera.GetView();
 	_SceneInfo.cameraInfo.projection = camera.GetProjection();
-	_SceneInfo.cameraUniformBuffer->WriteToBuffer(&_SceneInfo.cameraInfo);
+	_SceneInfo.cameraBuffers[viewIndex]->WriteToBuffer(&_SceneInfo.cameraInfo);
 
 	auto& pointLightsSrc = _SceneInfo.lightEnviroment.PointLights;
 	auto& uboPointsDest = _SceneInfo.uboPointLights;
@@ -108,24 +114,19 @@ void SceneRenderer::Draw(Pipeline& pipeline, std::vector<GameObject>& objects, C
 	_SceneInfo.uboDirectionalLight.directionalLight = _SceneInfo.lightEnviroment.DirectionalLight[0];
 	_SceneInfo.directionalLightBuffer->WriteToBuffer(&_SceneInfo.uboDirectionalLight);
 
-	_Renderer.Submit([&](VkCommandBuffer cmd) {
-		pipeline.Bind(cmd);
-		Commands::BindDescriptorSet(cmd, pipeline, 0, 1, _SceneInfo.generalInfoSet);
-		for (auto& drawnable : _Drawnables) {
-			if (drawnable.IsVisible) {
-				glm::mat4 transform = objects[drawnable.ownerId].GetTransform().mat4();
+	pipeline.Bind(cmd);
+	Commands::BindDescriptorSet(cmd, pipeline, 0, 1, _SceneInfo.generalInfoSets[viewIndex]);
+	for (auto& drawnable : _Drawnables) {
+		if (drawnable.IsVisible) {
+			glm::mat4 transform = objects[drawnable.ownerId].GetTransform().mat4();
 
-				Commands::DrawMeshesWithMaterial(
-					cmd,
-					pipeline,
-					_SceneInfo.fallbackTextureSet,
-					*drawnable.model,
-					transform
-				);
-			}
+			Commands::DrawMeshesWithMaterial(
+				cmd,
+				pipeline,
+				_SceneInfo.fallbackTextureSet,
+				*drawnable.model,
+				transform
+			);
 		}
-		if (overlayCallback) {
-			overlayCallback(cmd);
-		}
-		});
+	}
 }

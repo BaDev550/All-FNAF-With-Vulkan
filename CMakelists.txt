@@ -44,6 +44,8 @@ target_include_directories(Game
         Source
         vendor/GLFW/include
         vendor/imgui
+	vendor/openal/include
+	vendor/libsndfile/include
         vendor/glm
         vendor/assimp/include
         vendor/stb/
@@ -55,6 +57,8 @@ target_link_libraries(Game
         glfw
         ImGui
         assimp
+	OpenAL
+	sndfile
 
         ${VULKAN_LIB}
         ${SHADERC_LIB}

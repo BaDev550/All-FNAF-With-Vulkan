@@ -22,6 +22,7 @@ public:
 	Renderer& operator=(const Renderer&) = delete;
 	VkRenderPass GetSwapChainRenderPass() const;
 	VkFormat GetSwapChainImageFormat() const;
+	VkExtent2D GetSwapChainExtent() const;
 	float GetAspectRatio() const;
 
 	void Submit(const std::function<void(VkCommandBuffer&)>& fn);
@@ -38,7 +39,6 @@ private:
 	bool _IsFrameStarted = false;
 
 	bool IsFrameInProgress() const;
-	VkExtent2D GetSwapChainExtent() const;
 	VkFramebuffer GetSwapChainCurrentFramebuffer() const;
 	VkCommandBuffer GetCurrentCommandBuffer() const;
 	int GetFrameIndex() const;

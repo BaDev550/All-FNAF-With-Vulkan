@@ -1,6 +1,7 @@
 #pragma once
 #include "Window/Window.h"
 #include "Graphics/Device.h"
+#include "Audio/SoundDevice.h"
 #include "Graphics/Render/Renderer.h"
 #include "Game/Game.h"
 
@@ -27,6 +28,7 @@ public:
 	void SetGame(MEM::Ref<Game> game) { _Game = game; }
 	Device& GetDevice() { return *_Device; }
 	Window& GetWindow() { return *_Window; }
+	SoundDevice& GetSoundDevice() { return *_SoundDevice; }
 	Renderer& GetRenderer() { return *_Renderer; }
 private:
 	static Application* _Instance;
@@ -35,6 +37,7 @@ private:
 	MEM::Ref<Game> _Game = nullptr;
 
 	MEM::Scope<Window> _Window = nullptr;
+	MEM::Scope<SoundDevice> _SoundDevice = nullptr;
 	MEM::Scope<Device> _Device = nullptr;
 	MEM::Scope<Renderer> _Renderer = nullptr;
 };

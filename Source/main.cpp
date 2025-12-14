@@ -1,6 +1,6 @@
 #include "gpch.h"
 #include "Engine/Application.h"
-#include "Game/Game.h"
+#include "Game/FiveNightsAtFreddys.h"
 
 int main() {
 	ApplicationSpecifications appSpecs{};
