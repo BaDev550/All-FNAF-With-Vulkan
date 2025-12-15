@@ -5,6 +5,7 @@ layout (location = 2) in vec3 aNormal;
 
 layout (location = 0) out vec3 Normal;
 layout (location = 1) out vec2 TextureCoords;
+layout (location = 2) out vec4 WorldPos;
 
 layout (set = 0, binding = 0) uniform CameraInfo {
 	mat4 View;
@@ -16,8 +17,9 @@ layout(push_constant) uniform Push {
 } push;
 
 void main() {
-	vec4 worldPos = camera.Projection * camera.View * push.Model * vec4(aPosition, 1.0f);
+	vec4 worldPos = push.Model * vec4(aPosition, 1.0f);
 	Normal = normalize(aNormal);
 	TextureCoords = aTexCoords;
-	gl_Position = worldPos;
+	WorldPos = worldPos;
+	gl_Position = camera.Projection * camera.View * worldPos;
 }

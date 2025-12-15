@@ -66,13 +66,24 @@ MEM::Scope<DescriptorPool> DescriptorPool::Builder::Build() const {
 
 DescriptorPool::DescriptorPool(uint32_t maxSets, VkDescriptorPoolCreateFlags poolFlags, const std::vector<VkDescriptorPoolSize>& poolSizes)
 {
+	_DescriptorPool = VK_NULL_HANDLE;
+
 	VkDescriptorPoolCreateInfo descriptorPoolInfo{};
 	descriptorPoolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 	descriptorPoolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
 	descriptorPoolInfo.pPoolSizes = poolSizes.data();
 	descriptorPoolInfo.maxSets = maxSets;
 	descriptorPoolInfo.flags = poolFlags;
-	assert(vkCreateDescriptorPool(Application::Get()->GetDevice().LogicalDevice(), &descriptorPoolInfo, nullptr, &_DescriptorPool) == VK_SUCCESS && "Failed to create descriptor pool");
+	VkResult result = vkCreateDescriptorPool(
+		Application::Get()->GetDevice().LogicalDevice(),
+		&descriptorPoolInfo,
+		nullptr,
+		&_DescriptorPool
+	);
+
+	if (result != VK_SUCCESS) {
+		throw std::runtime_error("Failed to create Vulkan Descriptor Pool!");
+	}
 }
 
 DescriptorPool::~DescriptorPool() {

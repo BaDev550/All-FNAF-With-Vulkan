@@ -43,7 +43,10 @@ Texture::Texture(const std::string& path)
     samplerInfo.minLod = 0.0f;
     samplerInfo.maxLod = 0.0f;
 
-    assert(vkCreateSampler(Application::Get()->GetDevice().LogicalDevice(), &samplerInfo, nullptr, &_Sampler) == VK_SUCCESS && "Failed to create texture sampler");
+    VkResult result = vkCreateSampler(Application::Get()->GetDevice().LogicalDevice(), &samplerInfo, nullptr, &_Sampler);
+    if (result != VK_SUCCESS) {
+        throw std::runtime_error("Failed to create Vulkan image sampler!");
+    }
 }
 
 Texture::Texture(const uint8_t* data, uint32_t width, uint32_t height)
@@ -75,7 +78,10 @@ Texture::Texture(const uint8_t* data, uint32_t width, uint32_t height)
     samplerInfo.minLod = 0.0f;
     samplerInfo.maxLod = 0.0f;
 
-    assert(vkCreateSampler(Application::Get()->GetDevice().LogicalDevice(), &samplerInfo, nullptr, &_Sampler) == VK_SUCCESS && "Failed to create texture sampler");
+    VkResult result = vkCreateSampler(Application::Get()->GetDevice().LogicalDevice(), &samplerInfo, nullptr, &_Sampler);
+    if (result != VK_SUCCESS) {
+        throw std::runtime_error("Failed to create Vulkan image sampler!");
+    }
 }
 
 Texture::~Texture() {

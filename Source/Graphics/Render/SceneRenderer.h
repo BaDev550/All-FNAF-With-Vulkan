@@ -5,6 +5,7 @@
 #include "Graphics/Render/Light.h"
 #include "Graphics/Camera.h"
 #include "Objects/GameObject.h"
+#include "Objects/CameraObject.h"
 #include "Commands.h"
 
 constexpr uint32_t MAX_MESHES_PER_OBJECT = 400;
@@ -24,6 +25,7 @@ struct SceneLightEnviroment {
 struct CameraInfo {
 	glm::mat4 view;
 	glm::mat4 projection;
+	alignas(16) glm::vec3 position;
 };
 
 struct SceneInfo {
@@ -62,7 +64,7 @@ public:
 	Drawnable& CreateDrawnable(GameObject& object, const std::string& path);
 	Drawnable& GetDrawnable(gameobjectid_t id);
 
-	void Draw(VkCommandBuffer cmd, Pipeline& pipeline, std::vector<GameObject>& objects, Camera& camera, uint32_t viewIndex = 0);
+	void Draw(VkCommandBuffer cmd, Pipeline& pipeline, std::vector<MEM::Ref<GameObject>>& objects, CameraObject& camera, uint32_t viewIndex = 0);
 private:
 	Renderer& _Renderer;
 	SceneInfo _SceneInfo;

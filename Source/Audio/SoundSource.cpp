@@ -18,6 +18,14 @@ SoundSource::~SoundSource()
 	alDeleteSources(1, &_Source);
 }
 
+void SoundSource::PlayOnce() {
+	if (IsPlaying())
+		return;
+
+	alSourcei(_Source, AL_BUFFER, (ALint)_Buffer);
+	alSourcePlay(_Source);
+}
+
 void SoundSource::Play()
 {
 	if (IsPlaying())

@@ -2,7 +2,7 @@
 
 #include "glm/glm.hpp"
 #define MAX_DIRECTIONAL_LIGHTS 1
-#define MAX_POINT_LIGHTS 1024
+#define MAX_POINT_LIGHTS 100
 
 struct DirectionalLight {
 	glm::vec3 Direction;
@@ -17,6 +17,7 @@ struct PointLight {
 	alignas(16) glm::vec3 Color;
 	float Intensity;
 	
+	PointLight(glm::vec3 position, float intensity) : Position(position), Intensity(intensity), Color(1.0f) {}
 	PointLight() : Position(0.0f), Color(1.0f), Intensity(1.0f) {}
 };
 

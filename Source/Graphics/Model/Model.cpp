@@ -29,12 +29,9 @@ static const uint32_t S_ASSIMPIMPORTERFLAGS =
 	aiProcess_SplitLargeMeshes |
 	aiProcess_ImproveCacheLocality |
 	aiProcess_RemoveRedundantMaterials |
-	aiProcess_FindDegenerates |
-	aiProcess_FindInvalidData |
 	aiProcess_GenUVCoords |
 	aiProcess_FlipUVs |
-	aiProcess_CalcTangentSpace |
-	aiProcess_EmbedTextures;
+	aiProcess_CalcTangentSpace;
 
 MEM::Ref<Model> Model::CreateModelFromFile(const std::string& path, VkDescriptorImageInfo fallbackTextureInfo, DescriptorPool& pool, DescriptorSetLayout& layout)
 {

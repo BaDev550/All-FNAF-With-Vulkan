@@ -14,7 +14,7 @@ SceneRenderer::SceneRenderer(Renderer& renderer)
 
 	_SceneInfo.generalSetLayout = DescriptorSetLayout::Builder()
 		.AddBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT)
-		.AddBinding(1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT)
+		.AddBinding(1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT)
 		.AddBinding(2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT)
 		.Build();
 
@@ -33,7 +33,7 @@ SceneRenderer::SceneRenderer(Renderer& renderer)
 	_SceneInfo.pointLightBuffer = MEM::CreateScope<Buffer>(
 		sizeof(UniformBufferPointLights),
 		1,
-		VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+		VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
 		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 		Application::Get()->GetDevice().GetDeviceProperties().limits.minUniformBufferOffsetAlignment
 	);
@@ -93,12 +93,13 @@ Drawnable& SceneRenderer::GetDrawnable(gameobjectid_t id)
 	}
 }
 
-void SceneRenderer::Draw(VkCommandBuffer cmd, Pipeline& pipeline, std::vector<GameObject>& objects, Camera& camera, uint32_t viewIndex)
+void SceneRenderer::Draw(VkCommandBuffer cmd, Pipeline& pipeline, std::vector<MEM::Ref<GameObject>>& objects, CameraObject& camera, uint32_t viewIndex)
 {
 	if (viewIndex >= _SceneInfo.cameraBuffers.size()) return;
 
-	_SceneInfo.cameraInfo.view = camera.GetView();
-	_SceneInfo.cameraInfo.projection = camera.GetProjection();
+	_SceneInfo.cameraInfo.view = camera.GetCamera().GetView();
+	_SceneInfo.cameraInfo.projection = camera.GetCamera().GetProjection();
+	_SceneInfo.cameraInfo.position = camera.GetTransform().position;
 	_SceneInfo.cameraBuffers[viewIndex]->WriteToBuffer(&_SceneInfo.cameraInfo);
 
 	auto& pointLightsSrc = _SceneInfo.lightEnviroment.PointLights;
@@ -118,7 +119,7 @@ void SceneRenderer::Draw(VkCommandBuffer cmd, Pipeline& pipeline, std::vector<Ga
 	Commands::BindDescriptorSet(cmd, pipeline, 0, 1, _SceneInfo.generalInfoSets[viewIndex]);
 	for (auto& drawnable : _Drawnables) {
 		if (drawnable.IsVisible) {
-			glm::mat4 transform = objects[drawnable.ownerId].GetTransform().mat4();
+			glm::mat4 transform = objects[drawnable.ownerId]->GetTransform().mat4();
 
 			Commands::DrawMeshesWithMaterial(
 				cmd,

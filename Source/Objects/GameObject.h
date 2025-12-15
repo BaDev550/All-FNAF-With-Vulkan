@@ -18,7 +18,13 @@ struct TransformComponent {
 		result = glm::scale(result, scale);
 		return result;
 	}
+
+	static void CopyVec3PositionCoords(const glm::vec3& position);
 };
+
+struct Drawnable;
+class SceneRenderer;
+static gameobjectid_t currentId = 0;
 
 class GameObject
 {
@@ -26,9 +32,8 @@ public:
 	GameObject(gameobjectid_t objID, std::string name) : _Id(objID), _Name(name) {}
 	GameObject() : _Id(0), _Name("OBJECT") {}
 
-	static GameObject CreateGameObject(std::string name) { // to-do make game class
-		static gameobjectid_t currentId = 0;
-		return GameObject{ currentId++, name };
+	static MEM::Ref<GameObject> CreateGameObject(std::string name) { // to-do make game class
+		return MEM::CreateRef<GameObject>(currentId++, name);
 	}
 	TransformComponent& GetTransform() { return _Transform; }
 	const std::string& GetName() const { return _Name; }
@@ -42,3 +47,11 @@ protected:
 	TransformComponent _Transform;
 };
 
+class DrawnableGameObject : public GameObject {
+public:
+	DrawnableGameObject() = default;
+	DrawnableGameObject(SceneRenderer& renderer, const std::string& modelPath, gameobjectid_t id, const std::string& name);
+protected:
+	SceneRenderer& _Renderer;
+	Drawnable* _DrawingHandle;
+};

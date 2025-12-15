@@ -15,6 +15,7 @@ public:
 	}
 
 	void Play();
+	void PlayOnce();
 	void Stop();
 	bool IsPlaying() const;
 private:

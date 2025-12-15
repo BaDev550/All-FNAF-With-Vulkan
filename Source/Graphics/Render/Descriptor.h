@@ -54,7 +54,7 @@ public:
 	void Free(std::vector<VkDescriptorSet>& descriptors);
 	void Reset();
 private:
-	VkDescriptorPool _DescriptorPool;
+	VkDescriptorPool _DescriptorPool = VK_NULL_HANDLE;
 	friend class DescriptorWriter;
 };
 

@@ -126,7 +126,10 @@ void Pipeline::CreateGraphicsPipline(const PipelineConfigInfo& config, VkRenderP
 
 	pipelineInfo.basePipelineIndex = -1;
 	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
-	assert(vkCreateGraphicsPipelines(Application::Get()->GetDevice().LogicalDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &_GraphicsPipeline) == VK_SUCCESS);
+	VkResult result = vkCreateGraphicsPipelines(Application::Get()->GetDevice().LogicalDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &_GraphicsPipeline);
+	if (result != VK_SUCCESS) {
+		throw std::runtime_error("Failed to create Vulkan pipeline!");
+	}
 }
 
 void Pipeline::CreateShaderModule(const std::vector<char>& code, VkShaderModule* shaderModule)
@@ -135,5 +138,8 @@ void Pipeline::CreateShaderModule(const std::vector<char>& code, VkShaderModule*
 	createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
 	createInfo.codeSize = code.size();
 	createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
-	assert(vkCreateShaderModule(Application::Get()->GetDevice().LogicalDevice(), &createInfo, nullptr, shaderModule) == VK_SUCCESS);
+	VkResult result = vkCreateShaderModule(Application::Get()->GetDevice().LogicalDevice(), &createInfo, nullptr, shaderModule);
+	if (result != VK_SUCCESS) {
+		throw std::runtime_error("Failed to create Vulkan shader module!");
+	}
 }

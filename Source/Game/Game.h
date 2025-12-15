@@ -15,5 +15,5 @@ public:
 protected:
 	Renderer& _Renderer;
 	MEM::Scope<ImGuiLayer> _ImGuiLayer;
-	std::vector<GameObject> _GameObjects;
+	std::vector<MEM::Ref<GameObject>> _GameObjects;
 };
